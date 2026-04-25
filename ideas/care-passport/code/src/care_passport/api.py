@@ -3,6 +3,7 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
+import anthropic
 from fastapi import FastAPI, Header, HTTPException, Query, Response
 from pydantic import BaseModel
 from temporalio.client import Client, WorkflowExecutionStatus
@@ -14,13 +15,42 @@ from care_passport.workflow import PatientAgentWorkflow
 
 _temporal: Client | None = None
 _store: KnowledgeStore | None = None
+_llm_status: dict = {"ok": False, "detail": "not checked"}
+
+
+async def _probe_llm() -> dict:
+    """One-token Anthropic ping. Returns {ok, detail}."""
+    try:
+        client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+        await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1,
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        return {"ok": True, "detail": "reachable"}
+    except anthropic.AuthenticationError:
+        return {"ok": False, "detail": "auth_error: check ANTHROPIC_API_KEY"}
+    except anthropic.PermissionDeniedError:
+        return {"ok": False, "detail": "permission_denied: key lacks required permissions"}
+    except Exception as exc:
+        return {"ok": False, "detail": f"error: {type(exc).__name__}"}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _temporal, _store
+    global _temporal, _store, _llm_status
     _temporal = await Client.connect(settings.temporal_host)
     _store = get_store(settings.knowledge_store)
+    if settings.knowledge_store != "stub":
+        _llm_status = await _probe_llm()
+        if not _llm_status["ok"]:
+            import logging
+            logging.getLogger(__name__).error(
+                "LLM UNREACHABLE at startup: %s — extraction will fail until this is fixed",
+                _llm_status["detail"],
+            )
+    else:
+        _llm_status = {"ok": True, "detail": "stub mode — no LLM needed"}
     yield
 
 
@@ -73,9 +103,22 @@ async def _start_workflow(patient_id: str):
 # ---------------------------------------------------------------------------
 
 @app.get("/health")
-async def health():
+async def health(probe: str = Query(default="")):
+    global _llm_status
+    if probe == "llm":
+        _llm_status = await _probe_llm()
     t_ok = await _temporal_ok()
-    return {"status": "ok" if t_ok else "degraded", "services": {"temporal": t_ok, "store": True}}
+    llm_ok = _llm_status["ok"]
+    all_ok = t_ok and llm_ok
+    return {
+        "status": "ok" if all_ok else "degraded",
+        "services": {
+            "temporal": t_ok,
+            "store": True,
+            "llm": llm_ok,
+        },
+        "details": {"llm": _llm_status["detail"]},
+    }
 
 
 # ---------------------------------------------------------------------------

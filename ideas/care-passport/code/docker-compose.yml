@@ -80,20 +80,18 @@ services:
       - "8000:8000"
     restart: on-failure
 
-  cloudflared:
+  cloudflared-quick:
     image: cloudflare/cloudflared:latest
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        if [ -n "$$CLOUDFLARE_TUNNEL_TOKEN" ]; then
-          echo "Using named tunnel (persistent URL)";
-          exec cloudflared tunnel --no-autoupdate run --token "$$CLOUDFLARE_TUNNEL_TOKEN";
-        else
-          echo "Using quick tunnel (ephemeral URL — set CLOUDFLARE_TUNNEL_TOKEN for persistent)";
-          exec cloudflared tunnel --no-autoupdate --url http://api:8000;
-        fi
-    environment:
-      - CLOUDFLARE_TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    command: tunnel --no-autoupdate --url http://api:8000
+    profiles: [quick]
+    depends_on:
+      - api
+    restart: on-failure
+
+  cloudflared-named:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    profiles: [named]
     depends_on:
       - api
     restart: on-failure

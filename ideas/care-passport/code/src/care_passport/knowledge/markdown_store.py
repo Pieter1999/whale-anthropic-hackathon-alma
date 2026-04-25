@@ -190,7 +190,6 @@ class MarkdownKnowledgeStore:
                 messages=[{"role": "user", "content": user}],
             )
             raw = resp.content[0].text.strip()
-            # strip markdown code fences if present
             raw = re.sub(r"^```(?:json)?\s*", "", raw)
             raw = re.sub(r"\s*```$", "", raw)
             ops = [PatchOp(**o) for o in json.loads(raw)]
@@ -199,8 +198,29 @@ class MarkdownKnowledgeStore:
                 if not op.attributed:
                     op.attributed = attribution if attribution != "patient" else None
             self._apply_patch(patient_id, ops, today)
+        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError):
+            logger.error(
+                "[markdown_store] LLM auth/permission error for episode %s — re-raising so the activity fails visibly",
+                episode_id,
+            )
+            raise
         except Exception:
-            logger.exception("[markdown_store] extraction failed for episode %s", episode_id)
+            logger.exception("[markdown_store] extraction failed for episode %s — writing sentinel", episode_id)
+            self._write_extraction_failure(patient_id, episode_id, today)
+
+    def _write_extraction_failure(self, patient_id: str, episode_id: str, today: str) -> None:
+        """Append a visible sentinel to signals.md so readers know extraction didn't run."""
+        content = self._read_md(patient_id, "signals.md")
+        bullet = Bullet(
+            text=f"Extraction failed for episode {episode_id} — check worker logs and LLM connectivity.",
+            confidence="low",
+            sources=[episode_id],
+            first_seen=today,
+            last_confirmed=today,
+            status="needs_review",
+        )
+        content = self._insert_bullet(content, "Extraction errors", format_bullet(bullet))
+        self._write_md(patient_id, "signals.md", content)
 
     def _apply_patch(self, patient_id: str, ops: list[PatchOp], today: str) -> None:
         for op in ops:

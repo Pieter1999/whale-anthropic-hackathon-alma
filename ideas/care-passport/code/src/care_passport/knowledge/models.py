@@ -68,7 +68,7 @@ class TimelineEvent(BaseModel):
     patient_id: str
     kind: str
     summary: str
-    occurred_at: str
+    captured_at: str
     channel: str | None = None
     attribution: dict | None = None
 
