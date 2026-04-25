@@ -1,0 +1,45 @@
+test_name: phase 1 — cold-start patient creation
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: create patient (idempotency-friendly — accepts started or already_running)
+    request:
+      url: "{base_url}/patients"
+      method: POST
+      json:
+        id: "{patient_id}"
+        display_name: "{display_name}"
+        language: "en"
+      headers:
+        content-type: application/json
+    response:
+      status_code: 201
+      json:
+        patient_id: "{patient_id}"
+        workflow_id: "patient-{patient_id}"
+        status: !anything
+
+  - name: GET single patient shows running workflow
+    request:
+      url: "{base_url}/patients/{patient_id}"
+      method: GET
+    response:
+      status_code: 200
+      json:
+        patient_id: "{patient_id}"
+        workflow_id: "patient-{patient_id}"
+        workflow_status: "RUNNING"
+        summary: !anydict
+
+  - name: new patient appears in list
+    request:
+      url: "{base_url}/patients"
+      method: GET
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_patient_listed
+        extra_kwargs:
+          patient_id: "{patient_id}"

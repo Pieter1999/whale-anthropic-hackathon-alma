@@ -1,0 +1,121 @@
+test_name: phase 3 — five mixed-attribution conversations land in the timeline
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: patient voice note — calming routine (Wilhelmus / tea)
+    request:
+      url: "{base_url}/patients/{patient_id}/contributions"
+      method: POST
+      json:
+        text: >
+          When I get washed it helps if someone hums the Wilhelmus.
+          And I always want my cup of tea before breakfast — never after.
+        attribution:
+          kind: patient
+          name: Greet
+        channel: whatsapp
+      headers:
+        content-type: application/json
+    response:
+      status_code: 202
+    delay_after: 6
+
+  - name: patient voice note — value / fear (stay in my home)
+    request:
+      url: "{base_url}/patients/{patient_id}/contributions"
+      method: POST
+      json:
+        text: >
+          The most important thing for me is that I want to stay in my own home.
+          I am afraid of being moved to a nursing home.
+        attribution:
+          kind: patient
+          name: Greet
+        channel: whatsapp
+      headers:
+        content-type: application/json
+    response:
+      status_code: 202
+    delay_after: 6
+
+  - name: family note — language quirk (dog called Henk)
+    request:
+      url: "{base_url}/patients/{patient_id}/contributions"
+      method: POST
+      json:
+        text: >
+          Mum calls the dog 'Henk' — that was actually her father's name.
+          If you call the dog by its real name she gets confused.
+        attribution:
+          kind: family
+          name: Marieke
+          relationship: daughter
+        channel: web
+      headers:
+        content-type: application/json
+    response:
+      status_code: 202
+    delay_after: 6
+
+  - name: staff observation — sensory note (right-side approach)
+    request:
+      url: "{base_url}/patients/{patient_id}/contributions"
+      method: POST
+      json:
+        text: >
+          Greet flinches when approached from the right side. We always
+          announce ourselves and approach from the left.
+        attribution:
+          kind: staff
+          name: Nurse Joris
+        channel: shift_app
+      headers:
+        content-type: application/json
+    response:
+      status_code: 202
+    delay_after: 6
+
+  - name: patient voice note — ACP wish (no aggressive treatment)
+    request:
+      url: "{base_url}/patients/{patient_id}/contributions"
+      method: POST
+      json:
+        text: >
+          If something serious happens I do not want aggressive treatment
+          in hospital. I would rather be at home, comfortable, with Marieke.
+        attribution:
+          kind: patient
+          name: Greet
+        channel: whatsapp
+      headers:
+        content-type: application/json
+    response:
+      status_code: 202
+    delay_after: 8
+
+  - name: timeline now contains at least 6 events (1 onboarding + 5 conversations)
+    request:
+      url: "{base_url}/patients/{patient_id}/timeline?limit=200"
+      method: GET
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_timeline_min_size
+        extra_kwargs:
+          minimum: 6
+
+  - name: attribution preserved across patient/family/staff
+    request:
+      url: "{base_url}/patients/{patient_id}/timeline?limit=200"
+      method: GET
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_attribution_preserved
+        extra_kwargs:
+          expected_kinds:
+            - patient
+            - family
+            - staff

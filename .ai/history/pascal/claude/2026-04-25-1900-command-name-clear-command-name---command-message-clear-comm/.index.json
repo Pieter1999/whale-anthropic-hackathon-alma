@@ -1,0 +1,20 @@
+{
+  "child_sessions": [],
+  "cwd": "/Users/pascal/Code/business/experiments/anthropic-hackathon",
+  "messages": [
+    {
+      "kind": "user",
+      "role": "user",
+      "text": "<command-name>/clear</command-name>\n            <command-message>clear</command-message>\n            <command-args></command-args>",
+      "timestamp": "2026-04-25T19:00:06.290Z"
+    }
+  ],
+  "session_id": "767b90a8-7257-4a24-a99e-eaa1581e11cc",
+  "session_key": "claude:767b90a8-7257-4a24-a99e-eaa1581e11cc",
+  "source_path": "/Users/pascal/.claude/projects/-Users-pascal-Code-business-experiments-anthropic-hackathon/767b90a8-7257-4a24-a99e-eaa1581e11cc.jsonl",
+  "source_system": "claude",
+  "started_at": "2026-04-25T19:00:06.290Z",
+  "summary": null,
+  "system_name": "Pascals-MBP.local",
+  "user": "pascal"
+}
