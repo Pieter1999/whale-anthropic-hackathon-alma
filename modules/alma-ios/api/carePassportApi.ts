@@ -7,11 +7,11 @@ import type {
 } from "../types";
 import { mapApiToPatientProfile, mapQueryAnswer } from "./mappers";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_CARE_PASSPORT_API_BASE_URL;
+const API_BASE_URL = "/api/care-passport";
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   if (!API_BASE_URL) {
-    throw new Error("NEXT_PUBLIC_CARE_PASSPORT_API_BASE_URL is not configured.");
+    throw new Error("Care Passport API proxy is not configured.");
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {

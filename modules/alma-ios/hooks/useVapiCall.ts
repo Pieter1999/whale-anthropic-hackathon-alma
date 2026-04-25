@@ -10,6 +10,52 @@ const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 const assistantId = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID;
 const carePassportBaseUrl = process.env.NEXT_PUBLIC_CARE_PASSPORT_API_BASE_URL;
 
+function readableError(error: unknown): string {
+  if (!error) {
+    return "Unknown Vapi error.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const nested = record.error;
+
+    if (typeof nested === "string") {
+      return nested;
+    }
+
+    if (nested && typeof nested === "object") {
+      const nestedRecord = nested as Record<string, unknown>;
+      if (typeof nestedRecord.message === "string") {
+        return nestedRecord.message;
+      }
+    }
+
+    if (typeof record.message === "string") {
+      return record.message;
+    }
+
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "Vapi call failed.";
+    }
+  }
+
+  return String(error);
+}
+
+function logVapiEvent(label: string, payload?: unknown) {
+  console.info(`[Vapi] ${label}`, payload ?? "");
+}
+
 export function useVapiCall({
   patient,
   onCallEnded,
@@ -30,22 +76,38 @@ export function useVapiCall({
     vapiRef.current = vapi;
 
     vapi.on("call-start", () => {
+      logVapiEvent("call-start");
       setCallState("active");
       setError(null);
     });
-    vapi.on("speech-start", () => setCallState("speaking"));
-    vapi.on("speech-end", () => setCallState("active"));
+    vapi.on("speech-start", () => {
+      logVapiEvent("speech-start");
+      setCallState("speaking");
+    });
+    vapi.on("speech-end", () => {
+      logVapiEvent("speech-end");
+      setCallState("active");
+    });
     vapi.on("call-end", () => {
+      logVapiEvent("call-end");
       setCallState("ended");
       void onCallEnded?.();
     });
+    vapi.on("call-start-progress", (event) => {
+      logVapiEvent("call-start-progress", event);
+    });
     vapi.on("call-start-failed", (event) => {
+      console.error("[Vapi] call-start-failed", event);
       setCallState("idle");
       setError(event.error || "Vapi call failed to start.");
     });
     vapi.on("error", (err) => {
+      console.error("[Vapi] error", err);
       setCallState("idle");
-      setError(err instanceof Error ? err.message : "Vapi call failed.");
+      setError(readableError(err));
+    });
+    vapi.on("message", (message) => {
+      logVapiEvent("message", message);
     });
 
     return () => {
@@ -71,16 +133,30 @@ export function useVapiCall({
     setError(null);
 
     try {
-      await vapiRef.current.start(assistantId, {
+      logVapiEvent("start requested", {
+        assistantId,
+        patientId: patient.id,
+        carePassportBaseUrl,
+      });
+
+      const call = await vapiRef.current.start(assistantId, {
         variableValues: {
           patientId: patient.id,
           patientName: patient.name,
           carePassportBaseUrl,
         },
       });
+
+      if (!call) {
+        setCallState("idle");
+        setError(
+          "Vapi did not create a call. Check the browser console for the detailed Vapi error.",
+        );
+      }
     } catch (err) {
+      console.error("[Vapi] start exception", err);
       setCallState("idle");
-      setError(err instanceof Error ? err.message : "Could not start Vapi.");
+      setError(readableError(err));
     }
   }, [patient.id, patient.name]);
 
