@@ -1,2 +1,48 @@
-# whale-anthropic-hackathon-alma
-Hackathon concept idea for helping caretakers in nursing homes treat patients to their specialised needs in any situation.
+# Alma iOS Preview
+
+Next.js app that renders the Alma care-team and family iOS screens directly on
+the home page.
+
+## Structure
+
+- `app/page.tsx` - root route for `localhost:3000`.
+- `modules/alma-ios/components/` - screen, iPhone frame and UI components.
+- `modules/alma-ios/data/` - demo patient content.
+- `modules/alma-ios/types.ts` - local feature types.
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+Start with `modules/alma-ios/components/AlmaIosPreview.tsx` when changing the
+screen composition. Shared patient copy lives in
+`modules/alma-ios/data/davidProfile.ts`.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
