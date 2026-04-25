@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     llm_model: str = "claude-sonnet-4-6"
     knowledge_store: Literal["markdown", "stub", "graphiti"] = "markdown"
     data_root: Path = Path("/data/patients")
+    cors_origins: list[str] = ["*"]
 
 
 settings = Settings()

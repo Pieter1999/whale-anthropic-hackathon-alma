@@ -9,7 +9,24 @@ an AssertionError with a message Tavern surfaces directly into the test report.
 
 from __future__ import annotations
 
+import ast
+
 from tavern._core.dict_util import check_keys_match_recursive  # noqa: F401  (kept as Tavern import sanity)
+
+
+def _coerce_id_list(value) -> list[str]:
+    """Tavern stringifies saved values when interpolated into extra_kwargs;
+    this restores them to a list."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = ast.literal_eval(value)
+            if isinstance(parsed, list):
+                return parsed
+        except (ValueError, SyntaxError):
+            pass
+    return []
 
 
 def _lower_blob(obj) -> str:
@@ -40,9 +57,7 @@ def assert_timeline_grew(response, baseline: int):
 def assert_timeline_min_size(response, minimum: int):
     body = response.json()
     events = body.get("events", [])
-    assert len(events) >= minimum, (
-        f"timeline has {len(events)} events, expected >= {minimum}"
-    )
+    assert len(events) >= minimum, f"timeline has {len(events)} events, expected >= {minimum}"
     for ev in events:
         assert ev.get("captured_at"), f"event missing captured_at: {ev}"
         assert ev.get("event_id") or ev.get("kind"), f"event missing identity: {ev}"
@@ -63,8 +78,7 @@ def assert_passport_covers_categories(response, required_substrings):
     blob = _lower_blob(fields)
     missing = [tok for tok in required_substrings if tok.lower() not in blob]
     assert not missing, (
-        f"passport missing expected tokens {missing}; "
-        f"fields blob (truncated): {blob[:400]!r}"
+        f"passport missing expected tokens {missing}; fields blob (truncated): {blob[:400]!r}"
     )
     for f in fields:
         assert "confidence" in f, f"passport field missing confidence: {f}"
@@ -95,13 +109,13 @@ def assert_query_cites_real_sources(response, timeline_event_ids):
     answer = body.get("answer", "") or ""
     assert answer.strip(), f"query answer is empty: {body}"
     evidence = body.get("evidence") or []
-    assert evidence, (
-        f"query answered without citing any evidence — pure hallucination risk: {body}"
-    )
-    overlap = set(evidence) & set(timeline_event_ids or [])
+    assert evidence, f"query answered without citing any evidence — pure hallucination risk: {body}"
+    cited_note_ids = {e.split("#", 1)[0] for e in evidence}
+    overlap = cited_note_ids & set(timeline_event_ids or [])
     assert overlap, (
-        f"query evidence {evidence} does not intersect timeline event_ids "
-        f"{timeline_event_ids}; the system cited sources that don't exist in our log"
+        f"query evidence {evidence} (note_ids {sorted(cited_note_ids)}) "
+        f"does not intersect timeline event_ids {timeline_event_ids}; "
+        f"the system cited sources that don't exist in our log"
     )
     return {}
 
@@ -119,9 +133,7 @@ def assert_hot_moments_reflect_inputs(response, expected_calmer_tokens, expected
     agitator_blob = _lower_blob(agitators)
     missing_calm = [t for t in expected_calmer_tokens if t.lower() not in calmer_blob]
     missing_agit = [t for t in expected_agitator_tokens if t.lower() not in agitator_blob]
-    assert not missing_calm, (
-        f"calmers missing expected tokens {missing_calm}; calmers={calmers}"
-    )
+    assert not missing_calm, f"calmers missing expected tokens {missing_calm}; calmers={calmers}"
     assert not missing_agit, (
         f"agitators missing expected tokens {missing_agit}; agitators={agitators}"
     )
@@ -156,9 +168,7 @@ def assert_attribution_preserved(response, expected_kinds):
         if kind:
             found.add(kind)
     missing = [k for k in expected_kinds if k not in found]
-    assert not missing, (
-        f"timeline lost attribution kinds {missing}; observed kinds={sorted(found)}"
-    )
+    assert not missing, f"timeline lost attribution kinds {missing}; observed kinds={sorted(found)}"
     return {}
 
 
