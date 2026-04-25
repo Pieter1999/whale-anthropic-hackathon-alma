@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import anthropic
 import pytest
 
 from care_passport.activities import IngestEpisodeInput, ingest_episode_activity
@@ -167,5 +168,86 @@ async def test_right_side_agitator_lands_in_hot_moments():
     assert len(hm.agitators) >= 1
     agitator_text = " ".join(hm.agitators).lower()
     assert "right" in agitator_text
+
+    shutil.rmtree(tmp)
+
+
+# ---------------------------------------------------------------------------
+# Auth/permission errors must NOT be swallowed — they must propagate
+# ---------------------------------------------------------------------------
+
+def _auth_error() -> anthropic.AuthenticationError:
+    import httpx
+    req = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    resp = httpx.Response(401, request=req)
+    return anthropic.AuthenticationError(message="invalid x-api-key", response=resp, body={})
+
+
+def _perm_error() -> anthropic.PermissionDeniedError:
+    import httpx
+    req = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    resp = httpx.Response(403, request=req)
+    return anthropic.PermissionDeniedError(message="permission denied", response=resp, body={})
+
+
+@pytest.mark.asyncio
+async def test_authentication_error_is_not_swallowed():
+    """AuthenticationError re-raises so the Temporal activity fails visibly."""
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "greet").mkdir()
+
+    mock_client = AsyncMock()
+    mock_client.messages.create = AsyncMock(side_effect=_auth_error())
+
+    from care_passport.knowledge.markdown_store import MarkdownKnowledgeStore
+    store = MarkdownKnowledgeStore(data_root=tmp, anthropic_client=mock_client)
+
+    ep = Episode(source="contribution", text="She likes birds.", channel="whatsapp")
+    with pytest.raises(anthropic.AuthenticationError):
+        await store.ingest_episode("greet", ep)
+
+    shutil.rmtree(tmp)
+
+
+@pytest.mark.asyncio
+async def test_permission_denied_error_is_not_swallowed():
+    """PermissionDeniedError re-raises so the Temporal activity fails visibly."""
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "greet").mkdir()
+
+    mock_client = AsyncMock()
+    mock_client.messages.create = AsyncMock(side_effect=_perm_error())
+
+    from care_passport.knowledge.markdown_store import MarkdownKnowledgeStore
+    store = MarkdownKnowledgeStore(data_root=tmp, anthropic_client=mock_client)
+
+    ep = Episode(source="contribution", text="She likes birds.", channel="whatsapp")
+    with pytest.raises(anthropic.PermissionDeniedError):
+        await store.ingest_episode("greet", ep)
+
+    shutil.rmtree(tmp)
+
+
+@pytest.mark.asyncio
+async def test_generic_error_writes_sentinel_not_raises():
+    """Non-auth errors (e.g. JSON parse failure) write a sentinel to signals.md and return."""
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "greet").mkdir()
+
+    mock_client = AsyncMock()
+    mock_client.messages.create = AsyncMock(
+        side_effect=RuntimeError("network timeout")
+    )
+
+    from care_passport.knowledge.markdown_store import MarkdownKnowledgeStore
+    store = MarkdownKnowledgeStore(data_root=tmp, anthropic_client=mock_client)
+
+    ep = Episode(source="contribution", text="She likes birds.", channel="whatsapp")
+    result = await store.ingest_episode("greet", ep)
+
+    assert result.status == "ingested"
+    signals = store._read_md("greet", "signals.md")
+    assert "Extraction failed" in signals
+    assert "needs_review" in signals
 
     shutil.rmtree(tmp)

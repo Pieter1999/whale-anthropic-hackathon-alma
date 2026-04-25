@@ -24,7 +24,7 @@ app.add_middleware(
 @app.get("/patients")
 async def patients():
     """Returns the patient list for the session selection screen."""
-    return get_patients()
+    return await get_patients()
 
 
 @app.post("/webhook")

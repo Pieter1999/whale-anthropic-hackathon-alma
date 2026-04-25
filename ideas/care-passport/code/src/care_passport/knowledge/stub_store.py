@@ -88,7 +88,7 @@ _ANNA_TIMELINE = [
         patient_id="anna",
         kind="voice_call",
         summary="Anna's son David called to update medication schedule.",
-        occurred_at="2025-04-20T14:00:00",
+        captured_at="2025-04-20T14:00:00",
         channel="voice",
     ),
     TimelineEvent(
@@ -96,7 +96,7 @@ _ANNA_TIMELINE = [
         patient_id="anna",
         kind="whatsapp",
         summary="Anna mentioned she hasn't been sleeping well.",
-        occurred_at="2025-04-19T21:30:00",
+        captured_at="2025-04-19T21:30:00",
         channel="whatsapp",
     ),
     TimelineEvent(
@@ -104,7 +104,7 @@ _ANNA_TIMELINE = [
         patient_id="anna",
         kind="staff_note",
         summary="Morning shift — Anna was distressed at breakfast, calmed by music.",
-        occurred_at="2025-04-18T09:15:00",
+        captured_at="2025-04-18T09:15:00",
         channel="shift_app",
     ),
 ]

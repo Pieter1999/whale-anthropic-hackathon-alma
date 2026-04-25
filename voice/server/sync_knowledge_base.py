@@ -15,7 +15,7 @@ import sys
 import httpx
 from dotenv import load_dotenv, set_key  # set_key still used for VAPI_TOOL_ID
 
-from knowledge import all_documents
+from knowledge import all_documents_sync
 
 load_dotenv(dotenv_path="../../.env")
 
@@ -123,7 +123,7 @@ def attach_tool_to_assistant(tool_id: str) -> None:
 
 
 def main() -> None:
-    documents = all_documents()
+    documents = all_documents_sync()
     print(f"Uploading {len(documents)} patient document(s) to Vapi...")
 
     file_ids: list[str] = []

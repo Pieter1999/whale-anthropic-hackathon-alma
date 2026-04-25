@@ -93,11 +93,13 @@ def test_health_temporal_ok():
     temporal, _ = _make_temporal(health_ok=True)
     api_module._temporal = temporal
     api_module._store = StubKnowledgeStore()
+    api_module._llm_status = {"ok": True, "detail": "reachable"}
     c = TestClient(api_module.app)
     r = c.get("/health")
     assert r.status_code == 200
     body = r.json()
     assert body["services"]["temporal"] is True
+    assert body["services"]["llm"] is True
     assert body["status"] == "ok"
 
 
@@ -105,12 +107,27 @@ def test_health_temporal_down():
     temporal, _ = _make_temporal(health_ok=False)
     api_module._temporal = temporal
     api_module._store = StubKnowledgeStore()
+    api_module._llm_status = {"ok": True, "detail": "reachable"}
     c = TestClient(api_module.app)
     r = c.get("/health")
     assert r.status_code == 200
     body = r.json()
     assert body["services"]["temporal"] is False
     assert body["status"] == "degraded"
+
+
+def test_health_llm_down():
+    temporal, _ = _make_temporal(health_ok=True)
+    api_module._temporal = temporal
+    api_module._store = StubKnowledgeStore()
+    api_module._llm_status = {"ok": False, "detail": "auth_error: check ANTHROPIC_API_KEY"}
+    c = TestClient(api_module.app)
+    r = c.get("/health")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["services"]["llm"] is False
+    assert body["status"] == "degraded"
+    assert "auth_error" in body["details"]["llm"]
 
 
 # ---------------------------------------------------------------------------

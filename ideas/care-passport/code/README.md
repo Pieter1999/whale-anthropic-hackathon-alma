@@ -35,13 +35,17 @@ Temporal UI: http://localhost:8233
    Don't run the install command they show — just copy the token.
 3. Switch to the **Public Hostname** tab and add a route:
    - Subdomain: `passport` (or whatever)
-   - Domain: a Cloudflare-managed domain you own (e.g. `cloud.curiloo.com`)
+   - Domain: a Cloudflare-managed apex zone you own (e.g. `curiloo.com`).
+     **Important**: free Universal SSL only covers apex + one level of
+     subdomain. Use `passport.curiloo.com`, not `passport.foo.curiloo.com` —
+     deeper subdomains will fail TLS handshake unless you have Advanced
+     Certificate Manager.
    - Type: `HTTP`
    - URL: `api:8000` (the docker service name — not `localhost`)
 4. In `.env`, set:
    ```
    CLOUDFLARE_TUNNEL_TOKEN=<the long token from step 2>
-   CLOUDFLARE_TUNNEL_HOSTNAME=passport.cloud.curiloo.com
+   CLOUDFLARE_TUNNEL_HOSTNAME=passport.curiloo.com
    ```
 
 After that, `make up` runs the named tunnel automatically:
@@ -53,9 +57,9 @@ After that, `make up` runs the named tunnel automatically:
   Local API health:    http://localhost:8000/health
   Temporal UI:         http://localhost:8233
 
-  Public tunnel:       https://passport.cloud.curiloo.com  (named (persistent))
-  Vapi KB webhook:     https://passport.cloud.curiloo.com/vapi/kb?patient_id=anna
-  Vapi end-of-call:    https://passport.cloud.curiloo.com/vapi/end-of-call?patient_id=anna
+  Public tunnel:       https://passport.curiloo.com  (named (persistent))
+  Vapi KB webhook:     https://passport.curiloo.com/vapi/kb?patient_id=anna
+  Vapi end-of-call:    https://passport.curiloo.com/vapi/end-of-call?patient_id=anna
 =================================================================
 ```
 
