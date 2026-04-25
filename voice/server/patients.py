@@ -1,16 +1,23 @@
-"""
-Patient registry — connect get_patients() and get_patient_by_id() to the
-real data layer once it's available.
-"""
+import logging
+import os
 
+import httpx
 
-def get_patients() -> list[dict]:
-    # TODO: replace with real DB / API call
-    # Expected shape per patient:
-    # { "id": str, "name": str, "room": str, "diagnosis": str }
-    return []
+logger = logging.getLogger(__name__)
 
-
-def get_patient_by_id(patient_id: str) -> dict | None:
-    # TODO: replace with real DB / API call
-    return next((p for p in get_patients() if p["id"] == patient_id), None)
+async def get_patients() -> list[dict]:
+    base = os.environ.get("CARE_PASSPORT_URL", "http://localhost:8000")
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(f"{base}/patients")
+            resp.raise_for_status()
+        return [
+            {
+                "id": p["patient_id"],
+                "name": p["patient_id"].replace("-", " ").title(),
+            }
+            for p in resp.json().get("patients", [])
+        ]
+    except Exception as e:
+        logger.warning("Could not reach care passport API: %s", e)
+        return []
