@@ -2,7 +2,6 @@ import type {
   CarePassportApi,
   CompletenessReportDto,
   ContributionInput,
-  HotMomentsDto,
   PassportDto,
 } from "../types";
 import { mapApiToPatientProfile, mapQueryAnswer } from "./mappers";
@@ -39,19 +38,17 @@ async function requestOptionalJson<T>(path: string): Promise<T | undefined> {
 
 export const carePassportApi: CarePassportApi = {
   async getPatientProfile(patientId) {
-    const [passport, completeness, hotMoments] = await Promise.all([
+    const [passport, completeness] = await Promise.all([
       requestOptionalJson<PassportDto>(`/patients/${patientId}/passport`),
       requestOptionalJson<CompletenessReportDto>(
         `/patients/${patientId}/completeness`,
       ),
-      requestOptionalJson<HotMomentsDto>(`/patients/${patientId}/hot-moments`),
     ]);
 
     return mapApiToPatientProfile({
       patientId,
       passport,
       completeness,
-      hotMoments,
     });
   },
 

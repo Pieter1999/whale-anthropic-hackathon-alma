@@ -1,8 +1,17 @@
 export type Preference = {
-  title: string;
-  detail: string;
+  name: string;
+  trigger?: string;
+  note: string;
   source: string;
   date: string;
+};
+
+export type PreferenceDraft = {
+  name: string;
+  trigger: string;
+  note: string;
+  source?: string;
+  date?: string;
 };
 
 export type KnowledgeGap = {

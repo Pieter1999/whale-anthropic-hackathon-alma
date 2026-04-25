@@ -3,13 +3,12 @@ import { PatientScreen } from "./PatientScreen";
 import type {
   KnowledgeGap,
   PatientProfile,
-  Preference,
+  PreferenceDraft,
   QueryAnswer,
 } from "../types";
 
 export function PreviewColumn({
   title,
-  subtitle,
   patient,
   queryAnswer,
   queryLoading,
@@ -21,10 +20,9 @@ export function PreviewColumn({
   error,
   onAsk,
   onCaptureAnswer,
-  onEditPreference,
+  onEditPreferenceSave,
 }: {
   title: string;
-  subtitle: string;
   patient: PatientProfile;
   queryAnswer?: QueryAnswer | null;
   queryLoading?: boolean;
@@ -36,7 +34,10 @@ export function PreviewColumn({
   error?: string | null;
   onAsk?: () => void;
   onCaptureAnswer?: (gap: KnowledgeGap) => void;
-  onEditPreference?: (preference: Preference) => void;
+  onEditPreferenceSave: (
+    index: number | null,
+    draft: PreferenceDraft,
+  ) => void | Promise<void>;
 }) {
   return (
     <section className="flex flex-col items-center gap-3">
@@ -44,9 +45,6 @@ export function PreviewColumn({
         <h2 className="font-serif text-xl italic tracking-[-0.5px] text-[#2B2622]">
           {title}
         </h2>
-        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[1.4px] text-[#8A7F71]">
-          {subtitle}
-        </p>
       </header>
       <IphoneFrame>
         <PatientScreen
@@ -61,7 +59,7 @@ export function PreviewColumn({
           error={error}
           onAsk={onAsk}
           onCaptureAnswer={onCaptureAnswer}
-          onEditPreference={onEditPreference}
+          onEditPreferenceSave={onEditPreferenceSave}
         />
       </IphoneFrame>
     </section>

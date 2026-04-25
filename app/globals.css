@@ -32,3 +32,38 @@ button {
   background: #fde68a;
   color: #1c1917;
 }
+
+@keyframes alma-pulse {
+  0% { transform: scale(0.92); opacity: 0.85; }
+  60% { transform: scale(1.18); opacity: 0; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+@keyframes alma-pulse-2 {
+  0% { transform: scale(1); opacity: 0.55; }
+  60% { transform: scale(1.32); opacity: 0; }
+  100% { transform: scale(1.32); opacity: 0; }
+}
+
+@keyframes alma-breathe {
+  0%, 100% { transform: scale(0.97); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes alma-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.alma-pulse-ring {
+  animation: alma-pulse 2.6s ease-out infinite;
+}
+.alma-pulse-ring-2 {
+  animation: alma-pulse-2 2.6s ease-out infinite 0.6s;
+}
+.alma-breathe {
+  animation: alma-breathe 3.4s ease-in-out infinite;
+}
+.alma-fade-up {
+  animation: alma-fade-up 320ms ease-out both;
+}

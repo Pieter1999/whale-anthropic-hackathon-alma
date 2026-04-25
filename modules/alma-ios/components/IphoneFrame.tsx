@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 function StatusBar() {
   return (
     <div className="relative z-10 flex items-center justify-between px-[22px] pb-4 pt-5 text-black">
-      <span className="text-[17px] font-semibold leading-[22px]">9:41</span>
+      <span className="text-[17px] font-semibold leading-[22px] invisible">9:41</span>
       <div className="flex h-[22px] items-center gap-[8.5px]">
         <svg aria-hidden="true" width="19" height="12" viewBox="0 0 19 12">
           <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill="currentColor" />

@@ -1,17 +1,44 @@
+import { getStaticQuoteForPatient } from "../data/patientStaticQuote";
 import { davidProfile } from "../data/davidProfile";
 import type {
   CompletenessReportDto,
-  HotMomentsDto,
   PassportDto,
   PatientProfile,
   Preference,
   QueryAnswer,
 } from "../types";
 
+function toTitleCase(value: string): string {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(
+      (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    )
+    .join(" ");
+}
+
 function titleFromStatement(statement: string) {
   const clean = statement.trim();
   const [firstSentence] = clean.split(/[.!?]/);
   return (firstSentence || clean).slice(0, 80);
+}
+
+function triggerHintFromCategory(category?: string) {
+  switch ((category ?? "").toLowerCase()) {
+    case "preference":
+      return "When the moment to use this comes up";
+    case "behaviour":
+    case "behavior":
+      return "When this behaviour appears in care";
+    case "medical":
+      return "During medication or clinical handover";
+    case "identity":
+      return "When greeting or addressing the resident";
+    default:
+      return "When the moment to use this comes up";
+  }
 }
 
 function dateFromIso(value?: string | null) {
@@ -37,8 +64,9 @@ export function mapPassportToPreferences(passport?: PassportDto): Preference[] {
   }
 
   return passport.fields.map((field) => ({
-    title: titleFromStatement(field.statement),
-    detail: field.statement,
+    name: titleFromStatement(field.statement),
+    trigger: triggerHintFromCategory(field.category),
+    note: field.statement,
     source: field.source_ids?.length
       ? field.source_ids.join(", ")
       : `${field.category} · ${Math.round(field.confidence * 100)}% confidence`,
@@ -60,31 +88,21 @@ function gapsFromCompleteness(completeness?: CompletenessReportDto) {
   return weakWedges.length > 0 ? weakWedges : davidProfile.unanswered;
 }
 
-function oneLineFromHotMoments(hotMoments?: HotMomentsDto) {
-  const calmer = hotMoments?.calmers?.[0];
-  const phrase = hotMoments?.soothing_phrase;
-
-  if (calmer && phrase) {
-    return `${calmer}. Suggested phrase: "${phrase}"`;
-  }
-
-  return davidProfile.oneLine;
-}
-
 export function mapApiToPatientProfile({
   patientId,
   passport,
   completeness,
-  hotMoments,
 }: {
   patientId: string;
   passport?: PassportDto;
   completeness?: CompletenessReportDto;
-  hotMoments?: HotMomentsDto;
 }): PatientProfile {
   const fallback = davidProfile;
+  const { oneLine } = getStaticQuoteForPatient(patientId);
   const displayName =
-    patientId === fallback.id ? fallback.name : patientId.replaceAll("-", " ");
+    patientId === fallback.id
+      ? fallback.name
+      : toTitleCase(patientId.replaceAll("-", " "));
 
   return {
     ...fallback,
@@ -97,7 +115,7 @@ export function mapApiToPatientProfile({
       .join("")
       .slice(0, 2)
       .toUpperCase(),
-    oneLine: oneLineFromHotMoments(hotMoments),
+    oneLine,
     unanswered: gapsFromCompleteness(completeness),
     preferences: mapPassportToPreferences(passport),
   };

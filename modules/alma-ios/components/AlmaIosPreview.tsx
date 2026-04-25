@@ -1,10 +1,23 @@
 "use client";
 
-import type { KnowledgeGap, Preference } from "../types";
+import { useEffect, useState } from "react";
+import type {
+  KnowledgeGap,
+  Preference,
+  PreferenceDraft,
+} from "../types";
 import { davidProfile } from "../data/davidProfile";
 import { usePatientProfile } from "../hooks/usePatientProfile";
 import { useVapiCall } from "../hooks/useVapiCall";
 import { PreviewColumn } from "./PreviewColumn";
+
+function todayLabel() {
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+}
 
 export function AlmaIosPreview() {
   const {
@@ -19,6 +32,20 @@ export function AlmaIosPreview() {
     postContribution,
   } = usePatientProfile();
   const activePatient = patient ?? davidProfile;
+
+  const [localPreferences, setLocalPreferences] = useState<
+    Preference[] | null
+  >(null);
+
+  useEffect(() => {
+    setLocalPreferences(null);
+  }, [activePatient.id, activePatient.preferences]);
+
+  const effectivePatient = {
+    ...activePatient,
+    preferences: localPreferences ?? activePatient.preferences,
+  };
+
   const {
     error: vapiError,
     isConnecting: voiceConnecting,
@@ -26,7 +53,7 @@ export function AlmaIosPreview() {
     isSpeaking: voiceSpeaking,
     toggleCall,
   } = useVapiCall({
-    patient: activePatient,
+    patient: effectivePatient,
     onCallEnded: refreshPatientProfile,
   });
 
@@ -42,12 +69,50 @@ export function AlmaIosPreview() {
     });
   }
 
-  function editPreference(preference: Preference) {
-    void postContribution({
-      text: `Caregiver reviewed preference: ${preference.title}. ${preference.detail}`,
-      channel: "web",
-      attribution: { kind: "staff", source: "alma-ios-preview" },
+  async function savePreference(
+    index: number | null,
+    draft: PreferenceDraft,
+  ) {
+    setLocalPreferences((prev) => {
+      const base = prev ?? effectivePatient.preferences;
+      if (index == null) {
+        const next: Preference = {
+          name: draft.name,
+          trigger: draft.trigger || undefined,
+          note: draft.note,
+          source: draft.source ?? "You",
+          date: draft.date ?? todayLabel(),
+        };
+        return [...base, next];
+      }
+      const copy = [...base];
+      const current = copy[index];
+      if (!current) return base;
+      copy[index] = {
+        ...current,
+        name: draft.name,
+        trigger: draft.trigger || undefined,
+        note: draft.note,
+      };
+      return copy;
     });
+
+    try {
+      await postContribution({
+        text:
+          index == null
+            ? `New preference captured: ${draft.name}. ${draft.note}`
+            : `Preference updated: ${draft.name}. ${draft.note}`,
+        channel: "web",
+        attribution: {
+          kind: "staff",
+          source: "alma-ios-preview",
+          trigger: draft.trigger,
+        },
+      });
+    } catch {
+      // Local optimistic state stays; usePatientProfile already surfaces error.
+    }
   }
 
   return (
@@ -60,8 +125,7 @@ export function AlmaIosPreview() {
       <div className="mx-auto flex w-full max-w-[1200px] flex-row flex-wrap items-start justify-center gap-x-9 gap-y-7">
         <PreviewColumn
           title="Care team"
-          subtitle="About (incl. Alma) & Settings"
-          patient={activePatient}
+          patient={effectivePatient}
           queryAnswer={queryAnswer}
           queryLoading={queryLoading}
           voiceConnecting={voiceConnecting}
@@ -72,12 +136,11 @@ export function AlmaIosPreview() {
           error={vapiError ?? error}
           onAsk={askAlma}
           onCaptureAnswer={captureAnswer}
-          onEditPreference={editPreference}
+          onEditPreferenceSave={savePreference}
         />
         <PreviewColumn
           title="Family"
-          subtitle="David (incl. Alma) & Settings"
-          patient={activePatient}
+          patient={effectivePatient}
           queryAnswer={queryAnswer}
           queryLoading={queryLoading}
           voiceConnecting={voiceConnecting}
@@ -88,7 +151,7 @@ export function AlmaIosPreview() {
           error={vapiError ?? error}
           onAsk={askAlma}
           onCaptureAnswer={captureAnswer}
-          onEditPreference={editPreference}
+          onEditPreferenceSave={savePreference}
         />
       </div>
     </main>
