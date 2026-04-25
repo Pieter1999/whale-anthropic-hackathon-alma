@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 import anthropic
 from fastapi import FastAPI, Header, HTTPException, Query, Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from temporalio.client import Client, WorkflowExecutionStatus
 from temporalio.service import RPCError
@@ -55,6 +56,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Care Passport API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _wf_id(patient_id: str) -> str:

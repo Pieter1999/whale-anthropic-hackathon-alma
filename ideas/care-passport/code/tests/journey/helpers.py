@@ -9,7 +9,24 @@ an AssertionError with a message Tavern surfaces directly into the test report.
 
 from __future__ import annotations
 
+import ast
+
 from tavern._core.dict_util import check_keys_match_recursive  # noqa: F401  (kept as Tavern import sanity)
+
+
+def _coerce_id_list(value) -> list[str]:
+    """Tavern stringifies saved values when interpolated into extra_kwargs;
+    this restores them to a list."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = ast.literal_eval(value)
+            if isinstance(parsed, list):
+                return parsed
+        except (ValueError, SyntaxError):
+            pass
+    return []
 
 
 def _lower_blob(obj) -> str:
@@ -98,10 +115,13 @@ def assert_query_cites_real_sources(response, timeline_event_ids):
     assert evidence, (
         f"query answered without citing any evidence — pure hallucination risk: {body}"
     )
-    overlap = set(evidence) & set(timeline_event_ids or [])
+    cited_note_ids = {e.split("#", 1)[0] for e in evidence}
+    timeline_ids = set(_coerce_id_list(timeline_event_ids))
+    overlap = cited_note_ids & timeline_ids
     assert overlap, (
-        f"query evidence {evidence} does not intersect timeline event_ids "
-        f"{timeline_event_ids}; the system cited sources that don't exist in our log"
+        f"query evidence {evidence} (note_ids {sorted(cited_note_ids)}) "
+        f"does not intersect timeline {sorted(timeline_ids)}; "
+        f"the system cited sources that don't exist in our log"
     )
     return {}
 

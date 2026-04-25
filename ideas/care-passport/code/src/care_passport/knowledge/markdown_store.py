@@ -133,7 +133,7 @@ class MarkdownKnowledgeStore:
             "patient_id": patient_id,
             "kind": episode.channel,
             "summary": episode_text[:120],
-            "occurred_at": episode.captured_at,
+            "captured_at": episode.captured_at,
             "channel": episode.channel,
             "attribution": attribution,
         }
@@ -376,8 +376,8 @@ class MarkdownKnowledgeStore:
                 agitators.append(b.text)
             elif "soothing" in sec or "phrase" in sec:
                 soothing_phrase = b.text
-            elif "contact" in sec or "network" in sec:
-                # expect text like "Mark (son) – +31 6 12345678"
+            elif ("contact" in sec or "network" in sec) and named_contact is None:
+                # First bullet = primary contact. "Mark (son) – +31 6 12345678"
                 parts = re.split(r"\s*[–\-—]\s*", b.text, maxsplit=1)
                 name_part = parts[0].strip()
                 phone = parts[1].strip() if len(parts) > 1 else None

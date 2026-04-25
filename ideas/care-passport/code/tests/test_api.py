@@ -330,3 +330,24 @@ def test_query_patient(client):
     assert "answer" in body
     assert "confidence" in body
     assert "evidence" in body
+
+
+# ---------------------------------------------------------------------------
+# CORS
+# ---------------------------------------------------------------------------
+
+def test_cors_preflight_ok():
+    temporal, _ = _make_temporal(health_ok=True)
+    api_module._temporal = temporal
+    api_module._store = StubKnowledgeStore()
+    api_module._llm_status = {"ok": True, "detail": "reachable"}
+    c = TestClient(api_module.app)
+    r = c.options(
+        "/patients",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert r.status_code == 200
+    assert "access-control-allow-origin" in r.headers
