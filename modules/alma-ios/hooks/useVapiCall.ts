@@ -169,8 +169,9 @@ export function useVapiCall({
       const call = await vapiRef.current.start(assistantId, {
         variableValues: { patientId: patient.id, patientName: patient.name, carePassportBaseUrl },
       });
-      if (call && typeof (call as Record<string, unknown>).id === "string") {
-        callIdRef.current = (call as Record<string, unknown>).id as string;
+      const callRecord = call as unknown as Record<string, unknown> | null;
+      if (callRecord && typeof callRecord.id === "string") {
+        callIdRef.current = callRecord.id;
         logVapiEvent("call id saved", callIdRef.current);
       }
       if (!call) {

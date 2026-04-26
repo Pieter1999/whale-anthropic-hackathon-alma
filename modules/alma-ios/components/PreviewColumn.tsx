@@ -2,19 +2,14 @@ import { IphoneFrame } from "./IphoneFrame";
 import { PatientScreen } from "./PatientScreen";
 import type {
   PatientProfile,
-  Preference,
-  QueryAnswer,
+  PreferenceDraft,
 } from "../types";
-import type { CallMessage, LiveTranscript } from "../hooks/useVapiCall";
 
 export function PreviewColumn({
   title,
   subtitle,
   patient,
-  queryAnswer,
   queryLoading,
-  callMessages,
-  liveTranscript,
   voiceConnecting,
   voiceInCall,
   voiceSpeaking,
@@ -22,15 +17,12 @@ export function PreviewColumn({
   contributionMessage,
   error,
   onAsk,
-  onEditPreference,
+  onEditPreferenceSave,
 }: {
   title: string;
   subtitle: string;
   patient: PatientProfile;
-  queryAnswer?: QueryAnswer | null;
   queryLoading?: boolean;
-  callMessages?: CallMessage[];
-  liveTranscript?: LiveTranscript | null;
   voiceConnecting?: boolean;
   voiceInCall?: boolean;
   voiceSpeaking?: boolean;
@@ -38,7 +30,10 @@ export function PreviewColumn({
   contributionMessage?: string | null;
   error?: string | null;
   onAsk?: () => void;
-  onEditPreference?: (preference: Preference) => void;
+  onEditPreferenceSave?: (
+    index: number | null,
+    draft: PreferenceDraft,
+  ) => void | Promise<void>;
 }) {
   return (
     <section className="flex flex-col items-center gap-4">
@@ -53,10 +48,7 @@ export function PreviewColumn({
       <IphoneFrame>
         <PatientScreen
           patient={patient}
-          queryAnswer={queryAnswer}
           queryLoading={queryLoading}
-          callMessages={callMessages}
-          liveTranscript={liveTranscript}
           voiceConnecting={voiceConnecting}
           voiceInCall={voiceInCall}
           voiceSpeaking={voiceSpeaking}
@@ -64,7 +56,7 @@ export function PreviewColumn({
           contributionMessage={contributionMessage}
           error={error}
           onAsk={onAsk}
-          onEditPreference={onEditPreference}
+          onEditPreferenceSave={onEditPreferenceSave}
         />
       </IphoneFrame>
     </section>

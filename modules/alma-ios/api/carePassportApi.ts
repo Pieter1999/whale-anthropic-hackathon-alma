@@ -38,12 +38,12 @@ async function requestOptionalJson<T>(path: string): Promise<T | undefined> {
 
 export const carePassportApi: CarePassportApi = {
   async getPatientProfile(patientId) {
-    const [passport, completeness] = await Promise.all([
-      requestOptionalJson<PassportDto>(`/patients/${patientId}/passport`),
-      requestOptionalJson<CompletenessReportDto>(
-        `/patients/${patientId}/completeness`,
-      ),
-    ]);
+    const passport = await requestJson<PassportDto>(
+      `/patients/${patientId}/passport`,
+    );
+    const completeness = await requestOptionalJson<CompletenessReportDto>(
+      `/patients/${patientId}/completeness`,
+    );
 
     return mapApiToPatientProfile({
       patientId,

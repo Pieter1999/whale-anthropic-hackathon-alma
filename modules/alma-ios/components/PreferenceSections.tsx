@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import type { Preference } from "../types";
 import { PencilIcon } from "./Icons";
 
-function SectionDivider({ children }: { children: React.ReactNode }) {
+function SectionDivider({ children }: { children: ReactNode }) {
   return (
     <div className="px-0.5 pb-2 pt-6">
       <div className="flex items-center gap-2.5">
@@ -17,29 +18,51 @@ function SectionDivider({ children }: { children: React.ReactNode }) {
 
 function PreferenceCard({
   preference,
+  index,
   disabled,
   onEditPreference,
 }: {
   preference: Preference;
+  index: number;
   disabled?: boolean;
-  onEditPreference?: (preference: Preference) => void;
+  onEditPreference?: (preference: Preference, index: number) => void;
 }) {
+  const open = () => onEditPreference?.(preference, index);
+
   return (
-    <article className="relative rounded-[12px] border border-[#D6CFC0]/60 bg-white px-3 py-[11px] pr-10">
+    <article
+      role={onEditPreference ? "button" : undefined}
+      tabIndex={onEditPreference ? 0 : undefined}
+      onClick={onEditPreference ? open : undefined}
+      onKeyDown={
+        onEditPreference
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                open();
+              }
+            }
+          : undefined
+      }
+      className="group relative cursor-pointer rounded-[12px] border border-[#D6CFC0]/60 bg-white px-3 py-[11px] pr-10 outline-none transition hover:border-[#C8923A]/55 hover:shadow-sm active:bg-[#F8F3EA]"
+    >
       <button
         type="button"
         disabled={disabled}
-        onClick={() => onEditPreference?.(preference)}
-        aria-label={`Edit ${preference.title}`}
-        className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-lg text-[#6B7B72]"
+        onClick={(event) => {
+          event.stopPropagation();
+          open();
+        }}
+        aria-label={`Edit ${preference.name}`}
+        className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-lg text-[#6B7B72] transition-colors hover:bg-[#1A3829]/8 hover:text-[#1A3829] disabled:opacity-50"
       >
         <PencilIcon />
       </button>
       <h2 className="text-[13px] font-semibold leading-[1.35] text-[#1A3829]">
-        {preference.title}
+        {preference.name}
       </h2>
       <p className="mt-1 text-[11.8px] leading-[1.45] text-[#3D4D44]">
-        {preference.detail}
+        {preference.note}
       </p>
       <p className="mt-3 text-[11px] text-[#6B7B72]">
         {preference.source} · {preference.date}
@@ -55,16 +78,17 @@ export function PreferenceSections({
 }: {
   preferences: Preference[];
   isSaving?: boolean;
-  onEditPreference?: (preference: Preference) => void;
+  onEditPreference?: (preference: Preference, index: number) => void;
 }) {
   return (
     <section className="flex flex-col px-3.5 pb-6">
       <SectionDivider>Preferences</SectionDivider>
       <div className="flex flex-col gap-2">
-        {preferences.map((preference) => (
+        {preferences.map((preference, index) => (
           <PreferenceCard
-            key={preference.title}
+            key={`${preference.name}-${index}`}
             preference={preference}
+            index={index}
             disabled={isSaving}
             onEditPreference={onEditPreference}
           />

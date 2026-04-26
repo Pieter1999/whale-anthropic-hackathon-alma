@@ -45,11 +45,14 @@ export function VoiceScreen({
 
   useEffect(() => {
     if (!isPanic) return;
-    setAskPhase("connecting");
-    setCapPhase("idle");
+    const reset = setTimeout(() => {
+      setAskPhase("connecting");
+      setCapPhase("idle");
+    }, 0);
     const t1 = setTimeout(() => setAskPhase("thinking"), 900);
     const t2 = setTimeout(() => setAskPhase("phrase"), 2200);
     return () => {
+      clearTimeout(reset);
       clearTimeout(t1);
       clearTimeout(t2);
     };

@@ -41,9 +41,13 @@ export function PreferenceEditSheet({
 
   useEffect(() => {
     if (target) {
-      setName(target.preference.name);
-      setTrigger(target.preference.trigger ?? "");
-      setNote(target.preference.note);
+      const timer = setTimeout(() => {
+        setName(target.preference.name);
+        setTrigger(target.preference.trigger ?? "");
+        setNote(target.preference.note);
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, [target]);
 

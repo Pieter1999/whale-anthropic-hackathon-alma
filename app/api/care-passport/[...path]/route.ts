@@ -2,9 +2,11 @@ import { NextRequest } from "next/server";
 
 const CARE_PASSPORT_API_BASE_URL =
   process.env.CARE_PASSPORT_API_BASE_URL ??
+  process.env.LOCAL_CARE_PASSPORT_API_BASE_URL ??
   process.env.NEXT_PUBLIC_CARE_PASSPORT_API_BASE_URL;
 
-const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN;
+const API_AUTH_TOKEN =
+  process.env.API_AUTH_TOKEN ?? process.env.CARE_PASSPORT_API_AUTH_TOKEN;
 
 type RouteContext = {
   params: Promise<{ path: string[] }>;

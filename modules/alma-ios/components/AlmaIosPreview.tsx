@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Preference } from "../types";
-import { annaProfile } from "../data/annaProfile";
+import type { PatientProfile, Preference, PreferenceDraft } from "../types";
 import { usePatientProfile } from "../hooks/usePatientProfile";
 import { useVapiCall } from "../hooks/useVapiCall";
 import { PreviewColumn } from "./PreviewColumn";
@@ -13,24 +12,69 @@ const DEMO_PATIENTS = [
   { id: "maria", label: "Maria Jansen" },
 ];
 
+type LocalPreferenceState = {
+  patientId: string;
+  basePreferences: Preference[];
+  preferences: Preference[];
+};
+
+function todayLabel() {
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+}
+
+function emptyPatientProfile(patientId: string): PatientProfile {
+  const patientLabel =
+    DEMO_PATIENTS.find((patient) => patient.id === patientId)?.label ??
+    patientId.replaceAll("-", " ");
+
+  return {
+    id: patientId,
+    name: patientLabel,
+    initials: patientLabel
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase(),
+    age: 0,
+    room: "Care Passport",
+    oneLine: "Loading the Care Passport from the database.",
+    unanswered: [],
+    preferences: [],
+  };
+}
+
 export function AlmaIosPreview() {
   const [selectedPatientId, setSelectedPatientId] = useState(DEMO_PATIENTS[0].id);
+  const [localPreferences, setLocalPreferences] =
+    useState<LocalPreferenceState | null>(null);
   const {
     patient,
     loading,
     error,
-    queryAnswer,
     queryLoading,
     contributionLoading,
     contributionMessage,
     refreshPatientProfile,
     postContribution,
   } = usePatientProfile(selectedPatientId);
-  const activePatient = patient ?? annaProfile;
+  const basePatient = patient ?? emptyPatientProfile(selectedPatientId);
+  const preferences =
+    localPreferences?.patientId === basePatient.id &&
+    localPreferences.basePreferences === basePatient.preferences
+      ? localPreferences.preferences
+      : basePatient.preferences;
+  const activePatient = {
+    ...basePatient,
+    preferences,
+  };
   const {
     error: vapiError,
-    callMessages,
-    liveTranscript,
     isConnecting: voiceConnecting,
     isInCall: voiceInCall,
     isSpeaking: voiceSpeaking,
@@ -44,11 +88,60 @@ export function AlmaIosPreview() {
     void toggleCall();
   }
 
-  function editPreference(preference: Preference) {
-    void postContribution({
-      text: `Caregiver reviewed preference: ${preference.title}. ${preference.detail}`,
+  async function savePreference(index: number | null, draft: PreferenceDraft) {
+    setLocalPreferences((prev) => {
+      const base =
+        prev?.patientId === basePatient.id &&
+        prev.basePreferences === basePatient.preferences
+          ? prev.preferences
+          : basePatient.preferences;
+
+      if (index == null) {
+        return {
+          patientId: basePatient.id,
+          basePreferences: basePatient.preferences,
+          preferences: [
+            ...base,
+            {
+              name: draft.name,
+              trigger: draft.trigger || undefined,
+              note: draft.note,
+              source: draft.source ?? "You",
+              date: draft.date ?? todayLabel(),
+            },
+          ],
+        };
+      }
+
+      const copy = [...base];
+      const current = copy[index];
+      if (!current) return prev;
+
+      copy[index] = {
+        ...current,
+        name: draft.name,
+        trigger: draft.trigger || undefined,
+        note: draft.note,
+      };
+
+      return {
+        patientId: basePatient.id,
+        basePreferences: basePatient.preferences,
+        preferences: copy,
+      };
+    });
+
+    await postContribution({
+      text:
+        index == null
+          ? `New preference captured: ${draft.name}. ${draft.note}`
+          : `Preference updated: ${draft.name}. ${draft.note}`,
       channel: "web",
-      attribution: { kind: "staff", source: "alma-ios-preview" },
+      attribution: {
+        kind: "staff",
+        source: "alma-ios-preview",
+        trigger: draft.trigger,
+      },
     });
   }
 
@@ -124,10 +217,7 @@ export function AlmaIosPreview() {
             title="Care team view"
             subtitle="Alma · Patient profile · Real-time guidance"
             patient={activePatient}
-            queryAnswer={queryAnswer}
             queryLoading={queryLoading}
-            callMessages={callMessages}
-            liveTranscript={liveTranscript}
             voiceConnecting={voiceConnecting}
             voiceInCall={voiceInCall}
             voiceSpeaking={voiceSpeaking}
@@ -135,7 +225,7 @@ export function AlmaIosPreview() {
             contributionMessage={contributionMessage}
             error={vapiError ?? error}
             onAsk={askAlma}
-            onEditPreference={editPreference}
+            onEditPreferenceSave={savePreference}
           />
         </div>
       </div>

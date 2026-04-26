@@ -1,5 +1,3 @@
-import { getStaticQuoteForPatient } from "../data/patientStaticQuote";
-import { annaProfile } from "../data/annaProfile";
 import type {
   CompletenessReportDto,
   PassportDto,
@@ -38,8 +36,16 @@ function dateFromIso(value?: string | null) {
   return new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" }).format(date);
 }
 
+function summaryFromPassport(passport?: PassportDto) {
+  const identityField = passport?.fields.find((field) =>
+    ["identity", "personhood", "values"].includes(field.category.toLowerCase()),
+  );
+
+  return identityField?.statement ?? "Care Passport loaded from the database.";
+}
+
 export function mapPassportToPreferences(passport?: PassportDto): Preference[] {
-  if (!passport?.fields?.length) return annaProfile.preferences;
+  if (!passport?.fields?.length) return [];
   return passport.fields.map((field) => ({
     name: titleFromStatement(field.statement),
     trigger: triggerHintFromCategory(field.category),
@@ -52,11 +58,11 @@ export function mapPassportToPreferences(passport?: PassportDto): Preference[] {
 }
 
 function gapsFromCompleteness(completeness?: CompletenessReportDto) {
-  if (!completeness?.pzp_coverage) return annaProfile.unanswered;
+  if (!completeness?.pzp_coverage) return [];
   const weakWedges = Object.entries(completeness.pzp_coverage)
     .filter(([, score]) => score < 0.5)
     .map(([wedge]) => ({ question: `What should we still learn about ${wedge.replaceAll("_", " ")}?` }));
-  return weakWedges.length > 0 ? weakWedges : annaProfile.unanswered;
+  return weakWedges;
 }
 
 export function mapApiToPatientProfile({
@@ -66,17 +72,14 @@ export function mapApiToPatientProfile({
   passport?: PassportDto;
   completeness?: CompletenessReportDto;
 }): PatientProfile {
-  const fallback = annaProfile;
-  const { oneLine } = getStaticQuoteForPatient(patientId);
-  const displayName = patientId === fallback.id
-    ? fallback.name
-    : toTitleCase(patientId.replaceAll("-", " "));
+  const displayName = toTitleCase(patientId.replaceAll("-", " "));
   return {
-    ...fallback,
     id: patientId,
     name: displayName,
     initials: displayName.split(" ").filter(Boolean).map((p) => p[0]).join("").slice(0, 2).toUpperCase(),
-    oneLine,
+    age: 0,
+    room: "Care Passport",
+    oneLine: summaryFromPassport(passport),
     unanswered: gapsFromCompleteness(completeness),
     preferences: mapPassportToPreferences(passport),
   };
@@ -84,12 +87,12 @@ export function mapApiToPatientProfile({
 
 export function mapQueryAnswer(body: unknown, question: string): QueryAnswer {
   if (!body || typeof body !== "object") {
-    return { question, answer: annaProfile.oneLine, confidence: 0, evidence: [], uncertainty: "No structured answer returned by the API." };
+    return { question, answer: "No structured answer returned by the API.", confidence: 0, evidence: [], uncertainty: "No structured answer returned by the API." };
   }
   const answer = body as Partial<QueryAnswer>;
   return {
     question: typeof answer.question === "string" ? answer.question : question,
-    answer: typeof answer.answer === "string" && answer.answer.length > 0 ? answer.answer : annaProfile.oneLine,
+    answer: typeof answer.answer === "string" && answer.answer.length > 0 ? answer.answer : "No structured answer returned by the API.",
     confidence: typeof answer.confidence === "number" ? answer.confidence : 0.5,
     evidence: Array.isArray(answer.evidence) ? answer.evidence : [],
     uncertainty: typeof answer.uncertainty === "string" ? answer.uncertainty : null,
