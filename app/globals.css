@@ -1,21 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4efe8;
-  --foreground: #171717;
+  --background: #ece7da;
+  --foreground: #1a3829;
+  --alma-green: #1a3829;
+  --alma-green-dark: #142e20;
+  --alma-green-light: #2a5240;
+  --alma-cream: #ece7da;
+  --alma-cream-light: #f5f0e8;
+  --alma-gold: #c8923a;
+  --alma-gold-dark: #a67530;
+  --alma-border: #d6cfc0;
+  --alma-muted: #6b7b72;
+  --alma-card: #faf8f4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-poppins);
+  --font-caveat: var(--font-caveat);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+.font-caveat {
+  font-family: var(--font-caveat), cursive;
 }
 
 button,
@@ -29,8 +43,8 @@ button {
 }
 
 ::selection {
-  background: #fde68a;
-  color: #1c1917;
+  background: #c8923a;
+  color: #f5f0e8;
 }
 
 @keyframes alma-pulse {

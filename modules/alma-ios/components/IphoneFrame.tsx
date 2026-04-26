@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 function StatusBar() {
   return (
-    <div className="relative z-10 flex items-center justify-between px-[22px] pb-4 pt-5 text-black">
-      <span className="text-[17px] font-semibold leading-[22px] invisible">9:41</span>
+    <div className="relative z-10 flex items-center justify-between px-[22px] pb-4 pt-5 text-[#1A3829]">
+      <span className="text-[17px] font-semibold leading-[22px]">9:41</span>
       <div className="flex h-[22px] items-center gap-[8.5px]">
         <svg aria-hidden="true" width="19" height="12" viewBox="0 0 19 12">
           <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill="currentColor" />
@@ -28,7 +28,7 @@ function StatusBar() {
 
 export function IphoneFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative h-[874px] w-[402px] overflow-hidden rounded-[48px] bg-[#F7F5F1] shadow-[0_40px_80px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.12)]">
+    <div className="relative h-[874px] w-[402px] overflow-hidden rounded-[48px] bg-[#F5F0E8] shadow-[0_60px_120px_rgba(0,0,0,0.5),0_0_0_1.5px_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(255,255,255,0.12)]">
       <div className="pointer-events-none absolute left-1/2 top-3 z-50 h-[35px] w-[124px] -translate-x-1/2 rounded-[22px] bg-black" />
       <StatusBar />
       {children}

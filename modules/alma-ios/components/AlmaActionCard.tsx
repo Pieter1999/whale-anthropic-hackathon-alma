@@ -17,22 +17,33 @@ export function AlmaActionCard({
       ? "Alma is speaking"
       : isInCall
         ? "End voice call"
-        : "Ask or save a preference";
+        : "Ask Alma";
+
+  const sublabel = isInCall || isSpeaking || isLoading
+    ? null
+    : "Voice · Patient profile · Real-time guidance";
 
   return (
     <button
       type="button"
       disabled={isLoading}
       onClick={onAsk}
-      className="mx-5 mb-2 flex w-[calc(100%-40px)] items-center gap-3 rounded-[14px] bg-gradient-to-b from-[#2B2622] to-[#1F1B17] p-3.5 text-left text-[#FBEFE5] shadow-[0_4px_14px_rgba(31,27,23,0.18)]"
+      className="mx-3.5 mb-2 flex w-[calc(100%-28px)] items-center gap-3 rounded-[16px] bg-gradient-to-b from-[#1A3829] to-[#142E20] p-3.5 text-left text-[#F5EDD8] shadow-[0_6px_20px_rgba(20,46,32,0.30)]"
     >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E8A276] to-[#B5552A] shadow-[0_2px_10px_rgba(181,85,42,0.35)]">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#C8923A] to-[#A67530] shadow-[0_2px_10px_rgba(168,117,48,0.40)]">
         <MicIcon />
       </span>
-      <span className="min-w-0 flex-1 text-[12.5px] font-semibold leading-tight">
-        {label}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-semibold leading-tight">
+          {label}
+        </span>
+        {sublabel ? (
+          <span className="mt-0.5 block text-[10.5px] text-[#F5EDD8]/60">
+            {sublabel}
+          </span>
+        ) : null}
       </span>
-      <span className="shrink-0 opacity-50">
+      <span className="shrink-0 opacity-40">
         <ChevronRightIcon />
       </span>
     </button>
