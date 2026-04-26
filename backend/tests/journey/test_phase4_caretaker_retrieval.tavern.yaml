@@ -1,0 +1,67 @@
+test_name: phase 4 — caretaker (HCP frontend) retrieval
+
+# Bounded invariants only — exact extraction strings vary across LLM runs.
+# We assert: passport touches identity + care-preferences + values, completeness
+# moved off zero, timeline shape is sane, and the answer endpoint cites real
+# source_ids (no hallucinated provenance).
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: passport covers identity, care preferences, and values
+    request:
+      url: "{base_url}/patients/{patient_id}/passport"
+      method: GET
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_passport_covers_categories
+        extra_kwargs:
+          required_substrings:
+            - "tea"
+            - "home"
+            - "marieke"
+
+  - name: completeness reflects ingested wedges
+    request:
+      url: "{base_url}/patients/{patient_id}/completeness"
+      method: GET
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_completeness_reflects_inputs
+
+  - name: timeline returns >= 5 events with shape
+    request:
+      url: "{base_url}/patients/{patient_id}/timeline?limit=20"
+      method: GET
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 200
+      save:
+        $ext:
+          function: tests.journey.helpers:assert_timeline_min_size
+          extra_kwargs:
+            minimum: 5
+
+  - name: query answer cites source_ids that exist in our timeline
+    request:
+      url: "{base_url}/patients/{patient_id}/query"
+      method: POST
+      json:
+        question: "What helps Greet calm down?"
+      headers:
+        content-type: application/json
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_query_cites_real_sources
+        extra_kwargs:
+          timeline_event_ids: "{timeline_event_ids}"

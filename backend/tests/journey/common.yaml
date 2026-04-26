@@ -1,0 +1,9 @@
+name: care-passport-journey-common
+description: Shared variables for the cold-start journey suite.
+
+variables:
+  base_url: http://localhost:8000
+  patient_id: greet-test-001
+  display_name: Greet
+
+  auth_header: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"

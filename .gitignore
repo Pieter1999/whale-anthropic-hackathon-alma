@@ -3,8 +3,6 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-ideas/care-passport/code/data/
-
 # C extensions
 *.so
 

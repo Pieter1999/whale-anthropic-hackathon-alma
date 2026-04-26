@@ -1,0 +1,58 @@
+test_name: phase 2 — self-onboarding episode lands in the timeline
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: capture timeline baseline before onboarding
+    request:
+      url: "{base_url}/patients/{patient_id}/timeline?limit=200"
+      method: GET
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 200
+      save:
+        json:
+          baseline_events: events
+
+  - name: post self-onboarding contribution (patient, whatsapp)
+    # NOTE: this stage uses delay_after to wait for async ingestion.
+    # KNOWN LIMITATION — sleeping is a placeholder for a real "ingestion
+    # complete" signal. When the workflow exposes a query handler or the
+    # store exposes a sync mode, replace this with proper polling.
+    request:
+      url: "{base_url}/patients/{patient_id}/contributions"
+      method: POST
+      json:
+        text: >
+          Hi, my name is Greet. I am 78 years old and I live alone in
+          Utrecht. My daughter Marieke is most important to me. I value
+          my independence and I always have a cup of tea before
+          breakfast — that is how my day starts.
+        attribution:
+          kind: patient
+          name: Greet
+        channel: whatsapp
+      headers:
+        content-type: application/json
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 202
+      json:
+        status: accepted
+        patient_id: "{patient_id}"
+    delay_after: 8
+
+  - name: timeline grew after onboarding
+    request:
+      url: "{base_url}/patients/{patient_id}/timeline?limit=200"
+      method: GET
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_timeline_grew
+        extra_kwargs:
+          baseline: 0

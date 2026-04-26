@@ -1,0 +1,36 @@
+test_name: phase 6 — cleanup
+
+includes:
+  - !include common.yaml
+
+stages:
+  - name: delete patient
+    request:
+      url: "{base_url}/patients/{patient_id}"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 204
+
+  - name: deleted patient no longer appears in list
+    request:
+      url: "{base_url}/patients"
+      method: GET
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tests.journey.helpers:assert_patient_not_listed
+        extra_kwargs:
+          patient_id: "{patient_id}"
+
+  - name: GET on the deleted patient returns 404
+    request:
+      url: "{base_url}/patients/{patient_id}"
+      method: GET
+      headers:
+        Authorization: "Bearer {tavern.env_vars.API_AUTH_TOKEN}"
+    response:
+      status_code: 404
