@@ -1,48 +1,83 @@
-# Alma iOS Preview
+# Care Passport
 
-Next.js app that renders the Alma care-team and family iOS screens directly on
-the home page.
+WhatsApp voice companion / evidence-backed care passport for patients.
 
-## Structure
+## Repo layout
 
-- `app/page.tsx` - root route for `localhost:3000`.
-- `modules/alma-ios/components/` - screen, iPhone frame and UI components.
-- `modules/alma-ios/data/` - demo patient content.
-- `modules/alma-ios/types.ts` - local feature types.
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+app/, modules/, public/    Next.js front-end (Alma iOS preview UI)
+backend/                   Python API + Temporal worker + admin Next.js UI
+  admin/                   Internal admin dashboard
+docs/                      Product notes, research, decisions
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The front-end and back-end are **two independent systems** with separate stacks.
+You normally only run one of them.
 
-Start with `modules/alma-ios/components/AlmaIosPreview.tsx` when changing the
-screen composition. Shared patient copy lives in
-`modules/alma-ios/data/davidProfile.ts`.
+- The front-end is a plain Next.js app. Out of the box it talks to a hosted
+  back-end (Pascal's server) — you do **not** need a local back-end to run it.
+- The back-end is a self-contained docker-compose stack (FastAPI, Temporal,
+  Postgres, admin UI, optional cloudflared tunnel). Run it only if you are
+  working on the API/worker.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Front-end (root)
 
-## Learn More
+Standard Next.js dev workflow. Out of the box, API calls go to the hosted
+back-end via the `/api/care-passport/[...path]` proxy. Just install and run.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev          # http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+If you want to point the proxy at a different back-end (e.g. your own local
+docker stack, or a cloudflared tunnel), copy `.env.example` to `.env.local` and
+set:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+CARE_PASSPORT_API_BASE_URL=http://localhost:8000     # or tunnel URL
+API_AUTH_TOKEN=<must match backend/.env API_AUTH_TOKEN>
+```
 
-## Deploy on Vercel
+Vapi keys for the voice integration also live in `.env.local` — see
+`.env.example`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Front-end entry points:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/page.tsx` — root route
+- `modules/alma-ios/components/AlmaIosPreview.tsx` — main composition
+- `modules/alma-ios/api/carePassportApi.ts` — calls `/api/care-passport/...`
+- `app/api/care-passport/[...path]/route.ts` — server-side proxy that attaches
+  the bearer token
+
+## Back-end (`backend/`)
+
+Python (uv + FastAPI + Temporal) plus a Next.js admin UI, all wired up via
+docker-compose. Only needed if you are developing the API.
+
+```bash
+cd backend
+cp .env.example .env       # fill in ANTHROPIC_API_KEY etc.
+make doctor                # pre-flight check
+make up                    # builds & launches the full stack
+```
+
+Services:
+
+| Service       | URL                       | Purpose                      |
+| ------------- | ------------------------- | ---------------------------- |
+| API           | http://localhost:8000     | FastAPI                      |
+| Admin UI      | http://localhost:3000     | Next.js (hot-reloads on edits to `backend/admin/`) |
+| Temporal UI   | http://localhost:8233     | Workflow inspector           |
+| Cloudflared   | (logged on `make up`)     | Public tunnel for Vapi       |
+
+`make up` includes the admin UI automatically; edits in `backend/admin/src/`
+hot-reload via the bind-mounted volume.
+
+> Port collision: the front-end and admin UI both default to port 3000. If you
+> need them running side-by-side, start the front-end on a different port:
+> `PORT=3001 npm run dev`.
+
+## Docs
+
+Product thinking, research, GTM notes and decision logs live in `docs/`.
