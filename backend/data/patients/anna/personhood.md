@@ -1,7 +1,7 @@
 # Personhood — Anna van der Berg
 
 ## Identity
-- Preferred name is "Mevrouw van den Berg" — first-name address from new staff causes visible distress. {confidence: high, sources: [n_001#c_2], first_seen: 2026-04-01, last_confirmed: 2026-04-25}
+- Preferred name is "Mevrouw van den Berg" — first-name address from new staff causes visible distress. {confidence: high, sources: [n_001#c_2], first_seen: 2026-04-01, last_confirmed: 2026-04-26}
 - Worked as a primary-school teacher for 35 years in Utrecht, but only started teaching at 28. Refers to teaching as "my second life". {confidence: high, sources: [n_001#c_5, n_002#c_1], first_seen: 2026-04-01, last_confirmed: 2026-04-25}
 - **Was a roadie / backstage hand on the Dutch and German rock circuit from 1968 to 1978** — Cuby + Blizzards, Golden Earring, Shocking Blue, occasional German tours. She does not bring this up unprompted but will if you find the right opening. {confidence: high, sources: [n_006#c_1, n_007#c_2], first_seen: 2026-04-12, last_confirmed: 2026-04-23}
 - Met Henk in 1976 at a Cuby + Blizzards gig in Groningen — he was on the lighting crew. They were "on the road together" before they were married. {confidence: high, sources: [n_006#c_3], first_seen: 2026-04-12, last_confirmed: 2026-04-22}

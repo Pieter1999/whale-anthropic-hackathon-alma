@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Poppins, Caveat } from "next/font/google";
+import { Poppins, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -9,16 +9,15 @@ const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const caveat = Caveat({
-  variable: "--font-caveat",
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Alma — The soul of care, finally remembered.",
+  title: "Alma Care Briefing",
   description:
-    "AI companion for caregivers — capturing the small human details that medical systems miss.",
+    "Mobile-first caregiver interface for personal Alzheimer care preferences.",
 };
 
 export default function RootLayout({
@@ -29,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="nl"
-      className={`${poppins.variable} ${caveat.variable} h-full antialiased`}
+      className={`${poppins.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

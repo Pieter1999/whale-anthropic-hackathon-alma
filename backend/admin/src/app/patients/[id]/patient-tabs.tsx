@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +52,9 @@ function PassportSection({ data }: { data: Record<string, unknown> }) {
             <ul className="space-y-2">
               {items.map((item, i) => (
                 <li key={i} className="text-sm border-l-2 border-muted pl-3">
-                  <p>{item.statement}</p>
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.statement}</ReactMarkdown>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {Math.round(item.confidence * 100)}% · {item.last_confirmed_at}
                   </p>
@@ -79,7 +83,9 @@ function HotMomentsSection({ data }: { data: Record<string, unknown> }) {
           {calmers.map((c, i) => (
             <Card key={i} className="border-green-800">
               <CardContent className="pt-4">
-                <p className="text-sm">{c}</p>
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{c}</ReactMarkdown>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -90,7 +96,9 @@ function HotMomentsSection({ data }: { data: Record<string, unknown> }) {
           {agitators.map((a, i) => (
             <Card key={i} className="border-red-800">
               <CardContent className="pt-4">
-                <p className="text-sm">{a}</p>
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{a}</ReactMarkdown>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -102,7 +110,9 @@ function HotMomentsSection({ data }: { data: Record<string, unknown> }) {
             <CardTitle className="text-sm text-blue-400">Soothing phrase</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm italic">{soothingPhrase}</p>
+            <div className="prose prose-sm dark:prose-invert max-w-none italic">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{soothingPhrase}</ReactMarkdown>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -307,7 +317,9 @@ function AskTab({ patientId }: { patientId: string }) {
       {result && (
         <Card>
           <CardContent className="pt-4 space-y-3">
-            <p className="text-sm">{result.answer}</p>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result.answer}</ReactMarkdown>
+            </div>
             {result.citations?.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {result.citations.map((c, i) => (

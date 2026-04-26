@@ -10,7 +10,7 @@ class Episode(BaseModel):
     source: str
     transcript: str | None = None
     text: str | None = None
-    channel: Literal["voice", "whatsapp", "web", "shift_app"] = "voice"
+    channel: Literal["voice", "whatsapp", "web", "shift_app", "staff", "family"] = "voice"
     captured_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     attribution: dict | None = None
 

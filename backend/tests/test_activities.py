@@ -22,7 +22,7 @@ async def test_activity_delegates_to_store():
     mock_store = AsyncMock()
     mock_store.ingest_episode = AsyncMock(return_value=IngestResult(episode_id="ep-test"))
 
-    with patch("care_passport.activities.get_store", return_value=mock_store):
+    with patch("care_passport.activities._store", mock_store):
         result = await ingest_episode_activity(
             IngestEpisodeInput(
                 patient_id="anna",
@@ -48,7 +48,7 @@ async def test_activity_passes_correct_patient_id():
     mock_store = AsyncMock()
     mock_store.ingest_episode = AsyncMock(return_value=IngestResult(episode_id="ep-xyz"))
 
-    with patch("care_passport.activities.get_store", return_value=mock_store):
+    with patch("care_passport.activities._store", mock_store):
         await ingest_episode_activity(
             IngestEpisodeInput(
                 patient_id="greet-001",
@@ -65,7 +65,7 @@ async def test_activity_constructs_episode_with_attribution():
     mock_store = AsyncMock()
     mock_store.ingest_episode = AsyncMock(return_value=IngestResult(episode_id="ep-att"))
 
-    with patch("care_passport.activities.get_store", return_value=mock_store):
+    with patch("care_passport.activities._store", mock_store):
         await ingest_episode_activity(
             IngestEpisodeInput(
                 patient_id="anna",

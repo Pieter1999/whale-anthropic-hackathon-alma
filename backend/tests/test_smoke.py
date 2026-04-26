@@ -84,7 +84,7 @@ async def test_ingest_episode_activity_delegates():
     mock_store = AsyncMock()
     mock_store.ingest_episode = AsyncMock(return_value=IngestResult(episode_id="ep-test"))
 
-    with patch("care_passport.activities.get_store", return_value=mock_store):
+    with patch("care_passport.activities._store", mock_store):
         result = await ingest_episode_activity(
             IngestEpisodeInput(
                 patient_id="anna",
@@ -100,15 +100,29 @@ async def test_ingest_episode_activity_delegates():
 # API routes
 # ---------------------------------------------------------------------------
 
-def _make_app():
+def _make_app(patient_id: str = "anna"):
     """Return TestClient with mocked Temporal + store."""
+    import asyncio
     import care_passport.api as api_module
     from care_passport.knowledge.stub_store import StubKnowledgeStore
+    from care_passport.workflow import PatientAgentWorkflow
 
+    stub = StubKnowledgeStore()
     app = api_module.app
-    api_module._store = StubKnowledgeStore()
+    api_module._store = stub
 
-    # Mock temporal client
+    _dispatch = {
+        PatientAgentWorkflow.get_passport: lambda *_: stub.get_passport(patient_id),
+        PatientAgentWorkflow.get_hot_moments: lambda *_: stub.get_hot_moments(patient_id),
+        PatientAgentWorkflow.get_completeness: lambda *_: stub.get_completeness(patient_id),
+        PatientAgentWorkflow.get_timeline: lambda limit, *_: stub.get_timeline(patient_id, limit),
+        PatientAgentWorkflow.answer_query: lambda question, *_: stub.answer_query(patient_id, question),
+    }
+
+    async def _execute_update(update_fn, *args, **kwargs):
+        coro = _dispatch[update_fn](*args)
+        return await coro if asyncio.iscoroutine(coro) else coro
+
     mock_temporal = AsyncMock()
     api_module._temporal = mock_temporal
 
@@ -118,13 +132,13 @@ def _make_app():
     mock_handle.describe = AsyncMock(return_value=mock_desc)
     mock_handle.signal = AsyncMock()
     mock_handle.terminate = AsyncMock()
+    mock_handle.execute_update = _execute_update
 
     mock_temporal.get_workflow_handle = MagicMock(return_value=mock_handle)
     mock_temporal.start_workflow = AsyncMock(return_value=mock_handle)
     mock_temporal.service_client = AsyncMock()
     mock_temporal.service_client.health_check = AsyncMock()
 
-    # list_workflows returns async iterator
     async def fake_list():
         return
         yield  # make it an async generator

@@ -6,7 +6,14 @@ import logging
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from care_passport.activities import ingest_episode_activity
+from care_passport.activities import (
+    answer_query_activity,
+    get_completeness_activity,
+    get_hot_moments_activity,
+    get_passport_activity,
+    get_timeline_activity,
+    ingest_episode_activity,
+)
 from care_passport.config import settings
 from care_passport.workflow import PatientAgentWorkflow
 
@@ -19,7 +26,14 @@ async def main() -> None:
         client,
         task_queue=settings.temporal_task_queue,
         workflows=[PatientAgentWorkflow],
-        activities=[ingest_episode_activity],
+        activities=[
+            ingest_episode_activity,
+            get_passport_activity,
+            get_hot_moments_activity,
+            get_completeness_activity,
+            get_timeline_activity,
+            answer_query_activity,
+        ],
     ):
         logging.info("Worker running on task queue: %s", settings.temporal_task_queue)
         await asyncio.Future()

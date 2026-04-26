@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,9 +28,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Trash2, ExternalLink } from "lucide-react";
+import { Plus, MoreHorizontal, Trash2 } from "lucide-react";
 
-type Patient = { patient_id: string; workflow_id: string; status: string };
+type Patient = {
+  patient_id: string;
+  workflow_id: string;
+  status: string;
+  display_name: string;
+};
+
+function titleCase(id: string) {
+  return id
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 export function PatientsClient({ initialPatients }: { initialPatients: Patient[] }) {
   const router = useRouter();
@@ -54,7 +66,12 @@ export function PatientsClient({ initialPatients }: { initialPatients: Patient[]
       const created = await res.json();
       setPatients((p) => [
         ...p,
-        { patient_id: created.patient_id, workflow_id: created.workflow_id, status: created.status },
+        {
+          patient_id: created.patient_id,
+          workflow_id: created.workflow_id,
+          status: created.status,
+          display_name: form.display_name || titleCase(created.patient_id),
+        },
       ]);
       setCreateOpen(false);
       setForm({ id: "", display_name: "", language: "nl" });
@@ -136,33 +153,32 @@ export function PatientsClient({ initialPatients }: { initialPatients: Patient[]
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Name</TableHead>
               <TableHead>ID</TableHead>
-              <TableHead>Workflow ID</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-16" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {patients.map((p) => (
-              <TableRow key={p.patient_id}>
-                <TableCell>
-                  <Link
-                    href={`/patients/${p.patient_id}`}
-                    className="font-mono text-sm hover:underline flex items-center gap-1"
-                  >
-                    {p.patient_id}
-                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                  </Link>
-                </TableCell>
+              <TableRow
+                key={p.patient_id}
+                onClick={() => router.push(`/patients/${p.patient_id}`)}
+                className="cursor-pointer hover:bg-accent/40"
+              >
+                <TableCell className="font-semibold">{p.display_name}</TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
-                  {p.workflow_id}
+                  {p.patient_id}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={p.status === "running" ? "default" : "secondary"}>
+                  <Badge
+                    variant={p.status === "running" ? "default" : "secondary"}
+                    className={p.status === "running" ? "bg-emerald-600 hover:bg-emerald-600" : ""}
+                  >
                     {p.status}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
                       <MoreHorizontal className="h-4 w-4" />

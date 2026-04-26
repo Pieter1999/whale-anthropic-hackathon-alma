@@ -24,6 +24,17 @@ from care_passport.knowledge.models import (
     TimelineEvent,
 )
 from care_passport.knowledge.stub_store import StubKnowledgeStore
+from care_passport.workflow import PatientAgentWorkflow
+
+_STUB = StubKnowledgeStore()
+
+_UPDATE_DISPATCH = {
+    PatientAgentWorkflow.get_passport: lambda pid, *_: _STUB.get_passport(pid),
+    PatientAgentWorkflow.get_hot_moments: lambda pid, *_: _STUB.get_hot_moments(pid),
+    PatientAgentWorkflow.get_completeness: lambda pid, *_: _STUB.get_completeness(pid),
+    PatientAgentWorkflow.get_timeline: lambda pid, limit, *_: _STUB.get_timeline(pid, limit),
+    PatientAgentWorkflow.answer_query: lambda pid, question, *_: _STUB.answer_query(pid, question),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -36,7 +47,7 @@ def _running_desc():
     return desc
 
 
-def _make_handle(running: bool = True):
+def _make_handle(running: bool = True, patient_id: str = "anna"):
     handle = AsyncMock()
     if running:
         handle.describe = AsyncMock(return_value=_running_desc())
@@ -46,12 +57,22 @@ def _make_handle(running: bool = True):
         handle.describe = AsyncMock(return_value=desc)
     handle.signal = AsyncMock()
     handle.terminate = AsyncMock()
+
+    async def _execute_update(update_fn, *args, **kwargs):
+        dispatcher = _UPDATE_DISPATCH.get(update_fn)
+        if dispatcher is None:
+            raise ValueError(f"Unmapped update: {update_fn}")
+        import asyncio
+        result = dispatcher(patient_id, *args)
+        return await result if asyncio.iscoroutine(result) else result
+
+    handle.execute_update = _execute_update
     return handle
 
 
-def _make_temporal(running: bool = True, health_ok: bool = True):
+def _make_temporal(running: bool = True, health_ok: bool = True, patient_id: str = "anna"):
     temporal = AsyncMock()
-    handle = _make_handle(running)
+    handle = _make_handle(running, patient_id=patient_id)
     temporal.get_workflow_handle = MagicMock(return_value=handle)
     temporal.start_workflow = AsyncMock(return_value=handle)
     svc = AsyncMock()

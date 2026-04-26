@@ -170,7 +170,7 @@ async def list_patients(_: None = Depends(require_token)):
 async def get_patient(patient_id: str, _: None = Depends(require_token)):
     handle = await _get_handle(patient_id)
     desc = await handle.describe()
-    passport = await _store.get_passport(patient_id)
+    passport = await handle.execute_update(PatientAgentWorkflow.get_passport)
     return {
         "patient_id": patient_id,
         "workflow_id": _wf_id(patient_id),
@@ -258,22 +258,26 @@ async def post_contribution(patient_id: str, body: ContributionBody, _: None = D
 
 @app.get("/patients/{patient_id}/passport")
 async def get_passport(patient_id: str, _: None = Depends(require_token)):
-    return (await _store.get_passport(patient_id)).model_dump()
+    handle = await _get_handle(patient_id)
+    return (await handle.execute_update(PatientAgentWorkflow.get_passport)).model_dump()
 
 
 @app.get("/patients/{patient_id}/hot-moments")
 async def get_hot_moments(patient_id: str, _: None = Depends(require_token)):
-    return (await _store.get_hot_moments(patient_id)).model_dump()
+    handle = await _get_handle(patient_id)
+    return (await handle.execute_update(PatientAgentWorkflow.get_hot_moments)).model_dump()
 
 
 @app.get("/patients/{patient_id}/completeness")
 async def get_completeness(patient_id: str, _: None = Depends(require_token)):
-    return (await _store.get_completeness(patient_id)).model_dump()
+    handle = await _get_handle(patient_id)
+    return (await handle.execute_update(PatientAgentWorkflow.get_completeness)).model_dump()
 
 
 @app.get("/patients/{patient_id}/timeline")
 async def get_timeline(patient_id: str, limit: int = Query(default=50, ge=1, le=200), _: None = Depends(require_token)):
-    events = await _store.get_timeline(patient_id, limit)
+    handle = await _get_handle(patient_id)
+    events = await handle.execute_update(PatientAgentWorkflow.get_timeline, limit)
     return {"patient_id": patient_id, "events": [e.model_dump() for e in events]}
 
 
@@ -283,4 +287,5 @@ class QueryBody(BaseModel):
 
 @app.post("/patients/{patient_id}/query")
 async def query_patient(patient_id: str, body: QueryBody, _: None = Depends(require_token)):
-    return (await _store.answer_query(patient_id, body.question)).model_dump()
+    handle = await _get_handle(patient_id)
+    return (await handle.execute_update(PatientAgentWorkflow.answer_query, body.question)).model_dump()
